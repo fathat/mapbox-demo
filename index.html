@@ -12,6 +12,31 @@
 			canvas { display: block; }
 		</style>
 		<link rel="stylesheet" type="text/css" href="styles.css">
+
+		<script id="halo-fs" type="x-shader/x-fragment">
+
+		varying vec3 vNormal;
+
+		void main(void) {
+			float intensity = 1.0 - abs(dot(vNormal.xyz, vec3(0, 0, -1)));
+			float colorIntensity = clamp(pow(intensity * 2.0, 1.1), 0.0, 1.0);
+			gl_FragColor = vec4(vec3(0.7, 0.8, 1.0) * colorIntensity, intensity);
+		}
+
+		</script>
+
+		<script id="halo-vs" type="x-shader/x-vertex">
+			varying vec3 vNormal;
+
+			void main()
+			{
+				vNormal.xyz = normalMatrix * normal;
+				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+				gl_Position = projectionMatrix * mvPosition;
+			}
+		
+		</script>
+
 	</head>
 	<body>
 		<div class="options">
