@@ -3,6 +3,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Vector2 } from "three";
 
+//missing .d.ts so use the old school require syntax
+const tilebelt: any = require('@mapbox/tilebelt');
+
 /* 
     This is assuming a UVMap from the NASA blue-marble collection
     mapped to a standard UV sphere. 
@@ -16,6 +19,7 @@ function sphereUVtoLatLon(uv: Vector2): Vector2 {
     const lon: number = (uv.x - 0.5) * 360;
     return new Vector2(lon, lat)
 }
+
 
 function main() {
     // scene objects
@@ -104,8 +108,19 @@ function main() {
 
             (document.getElementById('lon') as any).value = latLon.x;
             (document.getElementById('lat') as any).value = latLon.y;
+            const zoom = parseInt((document.getElementById('zoom') as any).value);
+            
+            console.log(tilebelt.pointToTile(latLon.x, latLon.y, zoom));
         }
     })
+
+    
+    const loadHeightmap = () => {
+        /*url https://api.mapbox.com/v4/mapbox.terrain-rgb/15/0/39.pngraw?access_token=pk.eyJ1IjoiaWFub3ZlcmdhcmQiLCJhIjoiY2s3eXpnc2VsMDB3djNsc2MyeWc0Y3BseSJ9.3BJgWc7kIFflz-t7enxvAQ */
+        alert('done gone load heightmap')
+    }
+
+    document.getElementById('btn-load-heightmap')!.onclick = loadHeightmap;
 
     const animate = () => {
         requestAnimationFrame( animate );

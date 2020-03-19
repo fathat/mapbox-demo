@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@mapbox/tilebelt": "^1.0.1",
     "mapbox": "^1.0.0-beta10",
     "three": "^0.114.0"
   },

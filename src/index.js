@@ -11,6 +11,8 @@ const THREE = __importStar(require("three"));
 const OrbitControls_js_1 = require("three/examples/jsm/controls/OrbitControls.js");
 const GLTFLoader_1 = require("three/examples/jsm/loaders/GLTFLoader");
 const three_1 = require("three");
+//missing .d.ts so use the old school require syntax
+const tilebelt = require('@mapbox/tilebelt');
 /*
     This is assuming a UVMap from the NASA blue-marble collection
     mapped to a standard UV sphere.
@@ -48,7 +50,6 @@ function main() {
     scene.add(directionalLight);
     // add a sphere for the atmosphere halo
     let geometry = new THREE.SphereGeometry(0.975, 60, 30);
-    //let material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
     let material = new THREE.ShaderMaterial({
         vertexShader: document.getElementById('halo-vs').textContent,
         fragmentShader: document.getElementById('halo-fs').textContent,
@@ -93,8 +94,15 @@ function main() {
             const latLon = sphereUVtoLatLon(hit.uv);
             document.getElementById('lon').value = latLon.x;
             document.getElementById('lat').value = latLon.y;
+            const zoom = parseInt(document.getElementById('zoom').value);
+            console.log(tilebelt.pointToTile(latLon.x, latLon.y, zoom));
         }
     });
+    const loadHeightmap = () => {
+        /*url https://api.mapbox.com/v4/mapbox.terrain-rgb/15/0/39.pngraw?access_token=pk.eyJ1IjoiaWFub3ZlcmdhcmQiLCJhIjoiY2s3eXpnc2VsMDB3djNsc2MyeWc0Y3BseSJ9.3BJgWc7kIFflz-t7enxvAQ */
+        alert('done gone load heightmap');
+    };
+    document.getElementById('btn-load-heightmap').onclick = loadHeightmap;
     const animate = () => {
         requestAnimationFrame(animate);
         raycaster.setFromCamera(mouse, camera);
