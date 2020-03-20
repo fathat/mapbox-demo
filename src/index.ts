@@ -10,6 +10,7 @@ const accessToken = 'pk.eyJ1IjoiaWFub3ZlcmdhcmQiLCJhIjoiY2s3eXpnc2VsMDB3djNsc2My
 
 // threejs globals
 const gltfLoader = new GLTFLoader()
+const textureLoader = new THREE.TextureLoader();
 const cubeLoader = new THREE.CubeTextureLoader();
 const raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
@@ -174,7 +175,7 @@ class HeightmapScene implements IScene {
     directionalLight: THREE.DirectionalLight;
     controls: OrbitControls;
     plane?: THREE.Mesh;
-    planeMaterial?: THREE.MeshStandardMaterial;
+    planeMaterial?: THREE.Material;
     planeGeometry?: THREE.PlaneGeometry;
     wireMesh?: THREE.LineSegments;
     
@@ -193,7 +194,7 @@ class HeightmapScene implements IScene {
           ]);
 
         this.scene.background = skybox;
-        this.ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+        this.ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
         this.scene.add(this.ambientLight);
         this.directionalLight = new THREE.DirectionalLight( 0xffffff, 1.5 );
         this.scene.add(this.directionalLight);
@@ -226,24 +227,97 @@ class HeightmapScene implements IScene {
         window.addEventListener( 'resize', onWindowResize, false );
     }
 
-    rebuildWiremesh() {
+    public rebuildWiremesh() {
         if(this.wireMesh) {
             this.scene.remove(this.wireMesh);
         }
-        const w = 16;
-        const h = 16;
-        this.planeGeometry = new THREE.PlaneGeometry(w, h, w-1, h-1);
-        for(let y=0; y<w; y++) {
-            for(let x=0; x<h; x++) {
-                this.planeGeometry.vertices[x + y * w].z = Math.sin((x / (w-1)) * 3.14159 * 4.0 );
-            }
-        }
-        this.planeGeometry.verticesNeedUpdate = true;
 
-        let wireframe = new THREE.WireframeGeometry(this.planeGeometry);
-        this.wireMesh = new THREE.LineSegments(wireframe);
-        this.wireMesh.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
-        this.scene.add(this.wireMesh);
+        if(this.plane) {
+            this.scene.remove(this.plane);
+        }
+
+        let img = new Image();
+        img.crossOrigin = "Anonymous";
+
+        img.onload = (event: Event) => {                       
+            const w = img.width;
+            const h = img.height;
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            
+            let context = canvas.getContext('2d');
+            context!.drawImage(img, 0, 0);
+
+            textureLoader.load(canvas.toDataURL(),
+                (texture: THREE.Texture) => {
+                    const imgData = context!.getImageData(0, 0, w, h);
+                    console.log(imgData);
+                    this.planeGeometry = new THREE.PlaneGeometry(w, h, w-1, h-1);
+                    let index = 0;
+
+                    let minHeight = Number.MAX_VALUE;
+                    let maxHeight = Number.MIN_VALUE;
+
+                    let heights: number[] = [];
+                    for(let y=0; y<h; y++) {
+                        for(let x=0; x<w; x++) {
+                            const R = imgData.data[index];
+                            const G = imgData.data[index+1];
+                            const B = imgData.data[index+2];
+
+                            const height = -10000 + ((R * 256 * 256 + G * 256 + B) * 0.1);
+
+                            if(height < minHeight) {
+                                minHeight = height;
+                            }
+
+                            if(height > maxHeight) {
+                                maxHeight = height;
+                            }
+
+                            heights.push(height);
+                            index += 4;
+                        }
+                    }
+
+                    for(let y=0; y<h; y++) {
+                        for(let x=0; x<w; x++) {
+                            const height = heights[x+y*w];
+                            const normalizedHeight = (height - minHeight) / (maxHeight-minHeight);
+                            this.planeGeometry.vertices[x + y * w].z = normalizedHeight * 32.0;
+                            const color = new THREE.Color(
+                                imgData.data[x*4 + y*w*4],
+                                imgData.data[x*4 + y*w*4+1],
+                                imgData.data[x*4 + y*w*4+2]
+                            )
+                            this.planeGeometry.colors.push(color);
+                        }
+                    }
+                    
+                    this.planeGeometry.verticesNeedUpdate = true;
+                    this.planeGeometry.colorsNeedUpdate = true;
+                    this.planeGeometry.computeFaceNormals();
+                    this.planeGeometry.computeFlatVertexNormals();
+                                
+                    //let wireframe = new THREE.WireframeGeometry(this.planeGeometry);
+                    //this.wireMesh = new THREE.LineSegments(wireframe);
+                    //this.wireMesh.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
+                    //this.scene.add(this.wireMesh);
+
+                    this.planeMaterial = new THREE.MeshLambertMaterial({map: texture, color: 0xffffff})
+                    this.planeMaterial.vertexColors = true;
+                    this.planeMaterial.side = THREE.DoubleSide;
+                    
+                    this.plane = new THREE.Mesh(this.planeGeometry, this.planeMaterial);
+                    this.plane.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
+                    this.scene.add(this.plane)
+
+                }
+            );
+        };
+
+        loadTileFromLatLonIntoImage(currentLocation(), img);
     }
 
     setActive(active: boolean) {
@@ -264,17 +338,7 @@ class HeightmapScene implements IScene {
 
 
 function main() {
-    
-    inputform.onsubmit = (e: Event) => {
-        console.log('on submit')
-        e.preventDefault();
-        reloadPreview();
-        return false;
-    }
-        
-    inputLon.onblur = () => { reloadPreview(); };
-    inputLat.onblur = () => { reloadPreview(); };
-    inputZoom.onblur = () => { reloadPreview(); };
+ 
     
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize( window.innerWidth, window.innerHeight );
@@ -320,6 +384,18 @@ function main() {
     document.getElementById("view-heightmap-btn")!.onclick = () => {
         switchScene(heightmapScene);
     };
+
+    inputform.onsubmit = (e: Event) => {
+        console.log('on submit')
+        e.preventDefault();
+        reloadPreview();
+        heightmapScene.rebuildWiremesh();
+        return false;
+    }
+        
+    inputLon.onblur = () => { reloadPreview(); };
+    inputLat.onblur = () => { reloadPreview(); };
+    inputZoom.onblur = () => { reloadPreview(); };
 
     const animate = () => {
         requestAnimationFrame( animate );
