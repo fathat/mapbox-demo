@@ -173,13 +173,16 @@ class HeightmapScene implements IScene {
     ambientLight: THREE.AmbientLight;
     directionalLight: THREE.DirectionalLight;
     controls: OrbitControls;
+    plane?: THREE.Mesh;
+    planeMaterial?: THREE.MeshStandardMaterial;
+    planeGeometry?: THREE.PlaneGeometry;
+    wireMesh?: THREE.LineSegments;
     
     constructor(renderer: THREE.WebGLRenderer) {
         // scene objects
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.05, 1000 );
-       
-         
+                
         const skybox = cubeLoader.load([
             'assets/ground-skybox/right.png',
             'assets/ground-skybox/left.png',
@@ -195,16 +198,24 @@ class HeightmapScene implements IScene {
         this.directionalLight = new THREE.DirectionalLight( 0xffffff, 1.5 );
         this.scene.add(this.directionalLight);
 
-        // test sphere
-        let geometry = new THREE.SphereGeometry(0.975, 60, 30);
-        let material = new THREE.MeshBasicMaterial({color: 0x00ff00})
-        let sphere = new THREE.Mesh(geometry, material);
-        this.scene.add(sphere);
+        // test box
+        let geometry = new THREE.BoxGeometry(5, 5, 5);
+        let material = new THREE.MeshStandardMaterial({color: 0xff0000 });
+        let box = new THREE.Mesh(geometry, material);
+        this.scene.add(box);
+        
+        // plane       
+        this.rebuildWiremesh();       
+       
+        //this.planeMaterial = new THREE.MeshStandardMaterial({color: 0x00ff00})
+        //this.plane = new THREE.Mesh(this.planeGeometry, this.planeMaterial);
+        //this.plane.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
+        //this.scene.add(this.plane);
 
         this.controls = new OrbitControls( this.camera, renderer.domElement );
         this.controls.enabled = false;
 
-        this.camera.position.set(0, 0, 4);
+        this.camera.position.set(0, 128, 128);
         this.controls.update();
         this.directionalLight.position.copy(this.camera.position);
         
@@ -213,6 +224,26 @@ class HeightmapScene implements IScene {
             this.camera.updateProjectionMatrix();
         }
         window.addEventListener( 'resize', onWindowResize, false );
+    }
+
+    rebuildWiremesh() {
+        if(this.wireMesh) {
+            this.scene.remove(this.wireMesh);
+        }
+        const w = 16;
+        const h = 16;
+        this.planeGeometry = new THREE.PlaneGeometry(w, h, w-1, h-1);
+        for(let y=0; y<w; y++) {
+            for(let x=0; x<h; x++) {
+                this.planeGeometry.vertices[x + y * w].z = Math.sin((x / (w-1)) * 3.14159 * 4.0 );
+            }
+        }
+        this.planeGeometry.verticesNeedUpdate = true;
+
+        let wireframe = new THREE.WireframeGeometry(this.planeGeometry);
+        this.wireMesh = new THREE.LineSegments(wireframe);
+        this.wireMesh.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
+        this.scene.add(this.wireMesh);
     }
 
     setActive(active: boolean) {
