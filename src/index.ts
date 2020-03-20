@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { Vector2 } from "three";
+import { Vector2, Vector3 } from "three";
 
 //missing a .d.ts for this module so use the old school require syntax
 const TileBelt: any = require('@mapbox/tilebelt');
@@ -21,6 +21,13 @@ const inputLon: HTMLInputElement = document.getElementById('lon') as HTMLInputEl
 const inputLat: HTMLInputElement = document.getElementById('lat') as HTMLInputElement;
 const inputZoom: HTMLInputElement = document.getElementById('zoom') as HTMLInputElement;
 const inputform: HTMLFormElement = document.getElementById('heightfield-inputs') as HTMLFormElement;
+
+const maxHeightDisplay: HTMLDivElement = document.getElementById('max-height') as HTMLDivElement;
+const minHeightDisplay: HTMLDivElement = document.getElementById('min-height') as HTMLDivElement;
+const legend: HTMLDivElement = document.getElementById('legend') as HTMLDivElement;
+
+const viewPanel: HTMLDivElement = document.getElementById('view') as HTMLDivElement;
+const instructionsPanel: HTMLDivElement = document.getElementById('instructions') as HTMLDivElement;
 
 interface ILocation {
     lat: number
@@ -162,6 +169,8 @@ class GlobeScene implements IScene {
     }
 
     render(renderer: THREE.WebGLRenderer) {
+        renderer.clear(true, true, true);
+        renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
         renderer.render( this.scene, this.camera );
     }
 }
@@ -178,11 +187,18 @@ class HeightmapScene implements IScene {
     planeMaterial?: THREE.Material;
     planeGeometry?: THREE.PlaneGeometry;
     wireMesh?: THREE.LineSegments;
+
+    compass?: GLTF;
+    compassScene: THREE.Scene;
+    compassCamera: THREE.PerspectiveCamera;
     
     constructor(renderer: THREE.WebGLRenderer) {
         // scene objects
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.05, 1000 );
+
+        this.compassScene = new THREE.Scene();
+        this.compassCamera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.05, 100 );
                 
         const skybox = cubeLoader.load([
             'assets/ground-skybox/right.png',
@@ -199,30 +215,39 @@ class HeightmapScene implements IScene {
         this.directionalLight = new THREE.DirectionalLight( 0xffffff, 1.5 );
         this.scene.add(this.directionalLight);
 
-        // test box
-        let geometry = new THREE.BoxGeometry(5, 5, 5);
-        let material = new THREE.MeshStandardMaterial({color: 0xff0000 });
-        let box = new THREE.Mesh(geometry, material);
-        this.scene.add(box);
+
+        const compassAmbientLight = new THREE.AmbientLight(0xffffff, 1.0);
+        this.compassScene.add(compassAmbientLight);
+        const compassLight = new THREE.DirectionalLight( 0xffffff, 1.0 );
+        compassLight.position.set(0, 10, 0);
+        this.compassScene.add(compassLight);
+
+        // start loading earth model
+        gltfLoader.load('assets/compass.glb', (gltf: GLTF) => {
+            this.compass = gltf;
+            this.compassScene.add(this.compass.scene);
+        }, undefined, (errorEvent: ErrorEvent) => {
+            console.error(errorEvent);
+        });
+
         
         // plane       
         this.rebuildWiremesh();       
        
-        //this.planeMaterial = new THREE.MeshStandardMaterial({color: 0x00ff00})
-        //this.plane = new THREE.Mesh(this.planeGeometry, this.planeMaterial);
-        //this.plane.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
-        //this.scene.add(this.plane);
-
         this.controls = new OrbitControls( this.camera, renderer.domElement );
         this.controls.enabled = false;
 
         this.camera.position.set(0, 128, 128);
+        this.compassCamera.position.set(0, 5, 0);
+        this.compassCamera.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
         this.controls.update();
         this.directionalLight.position.copy(this.camera.position);
         
         const onWindowResize = () => {
             this.camera.aspect = window.innerWidth / window.innerHeight;
             this.camera.updateProjectionMatrix();
+            this.compassCamera.aspect = window.innerWidth / window.innerHeight;
+            this.compassCamera.updateProjectionMatrix();
         }
         window.addEventListener( 'resize', onWindowResize, false );
     }
@@ -281,6 +306,9 @@ class HeightmapScene implements IScene {
                         }
                     }
 
+                    minHeightDisplay.textContent = Math.floor(minHeight) + "m";
+                    maxHeightDisplay.textContent = Math.floor(maxHeight) + "m";
+
                     for(let y=0; y<h; y++) {
                         for(let x=0; x<w; x++) {
                             const height = heights[x+y*w];
@@ -305,14 +333,27 @@ class HeightmapScene implements IScene {
                     //this.wireMesh.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
                     //this.scene.add(this.wireMesh);
 
-                    this.planeMaterial = new THREE.MeshLambertMaterial({map: texture, color: 0xffffff})
-                    this.planeMaterial.vertexColors = true;
-                    this.planeMaterial.side = THREE.DoubleSide;
-                    
-                    this.plane = new THREE.Mesh(this.planeGeometry, this.planeMaterial);
-                    this.plane.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
-                    this.scene.add(this.plane)
-
+                    textureLoader.load('assets/color-ramp.jpg', (rampTexture: THREE.Texture) => {
+                        this.planeMaterial = new THREE.ShaderMaterial({
+                            vertexShader: document.getElementById('map-vs')!.textContent!,
+                            fragmentShader: document.getElementById('map-fs')!.textContent!,
+                            uniforms: {
+                                rampTexture: {
+                                    type: 't',
+                                    value: rampTexture
+                                },
+                                maxHeight: {
+                                    value: (maxHeight-minHeight)
+                                }
+                            },
+                            side: THREE.DoubleSide,
+                            vertexColors: true
+                        });
+                        
+                        this.plane = new THREE.Mesh(this.planeGeometry, this.planeMaterial);
+                        this.plane.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
+                        this.scene.add(this.plane)
+                    })
                 }
             );
         };
@@ -323,24 +364,38 @@ class HeightmapScene implements IScene {
     setActive(active: boolean) {
         this.active = active;
         this.controls.enabled = active;
+        legend.style.display = active ? "" : "none";
+        viewPanel.style.display = active ? "" : "none";
+        instructionsPanel.style.display = active ? "none" : "";
+        
     }
 
     animate() {
         raycaster.setFromCamera( mouse, this.camera );        
         this.controls.update();
         this.directionalLight.position.copy(this.camera.position);
+        
+        const target = new Vector3(0, 0, 0);
+        this.camera.getWorldDirection(target)
+        target.y = 0;
+        target.z *= -1;
+        target.normalize();
+        this.compass!.scene.lookAt(target);
     }
 
     render(renderer: THREE.WebGLRenderer) {
+        renderer.clear(true, true, true);
+        renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
         renderer.render( this.scene, this.camera );
+        renderer.setViewport(0, 0, window.innerWidth / 4.0, window.innerHeight / 4.0);
+        renderer.render( this.compassScene, this.compassCamera );
     }
 }
 
 
 function main() {
- 
-    
     const renderer = new THREE.WebGLRenderer();
+    renderer.autoClear = false;
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.setClearColor('#001122');
     document.body.appendChild( renderer.domElement );
@@ -358,7 +413,7 @@ function main() {
 
 
     tilePreview.onerror = () => {
-        tilePreview.src = 'https://upload.wikimedia.org/wikipedia/it/3/39/Sad_mac.jpg'
+        tilePreview.src = 'assets/nodata.png'
     }
 
     
@@ -381,18 +436,24 @@ function main() {
         switchScene(globeScene);
     };
 
-    document.getElementById("view-heightmap-btn")!.onclick = () => {
-        switchScene(heightmapScene);
-    };
+    const hmapbtn = document.getElementById("view-heightmap-btn");
+    if(hmapbtn) {
+        hmapbtn.onclick = () => {
+            switchScene(heightmapScene);
+        };
+    }
 
     inputform.onsubmit = (e: Event) => {
         console.log('on submit')
         e.preventDefault();
         reloadPreview();
         heightmapScene.rebuildWiremesh();
+        switchScene(heightmapScene);
         return false;
     }
-        
+    legend.style.display = "none";
+    viewPanel.style.display = "none";
+
     inputLon.onblur = () => { reloadPreview(); };
     inputLat.onblur = () => { reloadPreview(); };
     inputZoom.onblur = () => { reloadPreview(); };

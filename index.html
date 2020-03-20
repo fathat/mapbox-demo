@@ -14,15 +14,13 @@
 		<link rel="stylesheet" type="text/css" href="styles.css">
 
 		<script id="halo-fs" type="x-shader/x-fragment">
+			varying vec3 vNormal;
 
-		varying vec3 vNormal;
-
-		void main(void) {
-			float intensity = 1.0 - abs(dot(vNormal.xyz, vec3(0, 0, -1)));
-			float colorIntensity = clamp(pow(intensity * 2.0, 1.1), 0.0, 1.0);
-			gl_FragColor = vec4(vec3(0.7, 0.8, 1.0) * colorIntensity, intensity);
-		}
-
+			void main(void) {
+				float intensity = 1.0 - abs(dot(vNormal.xyz, vec3(0, 0, -1)));
+				float colorIntensity = clamp(pow(intensity * 2.0, 1.1), 0.0, 1.0);
+				gl_FragColor = vec4(vec3(0.7, 0.8, 1.0) * colorIntensity, intensity);
+			}
 		</script>
 
 		<script id="halo-vs" type="x-shader/x-vertex">
@@ -34,7 +32,32 @@
 				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 				gl_Position = projectionMatrix * mvPosition;
 			}
-		
+		</script>
+
+
+		<script id="map-vs" type="x-shader/x-vertex">
+			varying vec3 vNormal;
+			varying float rampLookup;
+			uniform float maxHeight;
+
+			void main()
+			{
+				rampLookup = position.z / 32.0;
+				vNormal.xyz = (modelMatrix * vec4(normal, 0)).xyz;
+				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+				gl_Position = projectionMatrix * mvPosition;
+			}
+		</script>
+		<script id="map-fs" type="x-shader/x-fragment">
+			varying vec3 vNormal;
+			varying float rampLookup;
+			uniform sampler2D rampTexture;
+
+			void main(void) {
+				float l = abs(dot(vNormal.xyz, vec3(0, 1, 0)));
+				vec4 color = texture2D(rampTexture, vec2(0.0, rampLookup));
+				gl_FragColor = vec4(color.rgb * l, 1.0);
+			}
 		</script>
 
 	</head>
@@ -43,10 +66,15 @@
 			<p> Hint: You can double click on the globe to set a lattitude and longitude. </p>	
 		</div>
 		<div id="view">
-			<button id="view-globe-btn">Globe</button>
-			<button id="view-heightmap-btn">Heightmap</button>
+			<button id="view-globe-btn">Back to Globe</button>
+			<!--<button id="view-heightmap-btn">Heightmap</button>-->
 		</div>
-		<div class="options">
+		<div id="legend">
+			<div id="max-height"></div>
+			<img id="color-ramp" src="assets/color-ramp.jpg" />
+			<div id="min-height">?</div>
+		</div>
+		<div id="options" class="options">
 			<div class="header">
 				<h3>Load Heightfield</h3>
 			</div>
@@ -73,10 +101,10 @@
 				</div>
 				
 				<div>
-					<img id="tilepreview" src="https://api.mapbox.com/v4/mapbox.terrain-rgb/1/0/0.pngraw?access_token=pk.eyJ1IjoiaWFub3ZlcmdhcmQiLCJhIjoiY2s3eXpnc2VsMDB3djNsc2MyeWc0Y3BseSJ9.3BJgWc7kIFflz-t7enxvAQ" />
+					<img id="tilepreview" src="assets/nodata.png" />
 				</div>
 				<div class="actions">
-					<button id="btn-load-heightmap">Go!</button>
+					<button id="btn-load-heightmap">Show Heightfield</button>
 				</div>
 			</form>
 		</div>
