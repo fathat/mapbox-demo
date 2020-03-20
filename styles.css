@@ -1,3 +1,37 @@
+#view {
+    position: absolute;
+    top: 10px;
+    left: 300px;
+    border-radius: 10px;
+    border: 1px solid cornflowerblue;
+    background-color: rgba(32, 32, 32, 0.8);
+    padding: 15px;
+    color: cornflowerblue;
+}
+
+#view button {
+    padding: 15px;
+    border: 1px solid cornflowerblue;
+    background-color: rgb(39, 44, 73);
+    color: cornflowerblue;
+}
+
+#view button:hover {
+    background-color: rgb(62, 78, 165);
+    color: white;
+}
+
+#view button:focus {
+    border: 1px solid rgb(32, 128, 200);
+    background-color: rgb(62, 78, 165);
+    color: cornflowerblue;
+}
+
+#view button:active {
+    background-color: rgb(32, 32, 64);
+    transform: translateY(2px);
+}
+
 .options {
     position: absolute;
     right: 10px;
