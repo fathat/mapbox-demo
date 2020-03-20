@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<title>Higharc Graphics Challenge</title>
+		<title>Mapbox Terrain Visualizer</title>
 		<link href="https://fonts.googleapis.com/css?family=Open+Sans|Roboto&display=swap" rel="stylesheet"> 
 		<style>
 			body { 
@@ -96,13 +96,13 @@
 						<label for="zoom">Zoom</label>
 					</div>
 					<div class="field">
-						<input id="zoom" type="number" name="zoom" value="12"/>
+						<input id="zoom" type="range" min="0" max="15" name="zoom" value="12"/>
 					</div>
 				</div>
 				
-				<div>
+				<!--<div>
 					<img id="tilepreview" src="assets/nodata.png" />
-				</div>
+				</div>-->
 				<div class="actions">
 					<button id="btn-load-heightmap">Show Heightfield</button>
 				</div>

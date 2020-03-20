@@ -120,7 +120,7 @@ class GlobeScene {
                 const latLon = sphereUVtoLatLon(hit.uv);
                 inputLon.value = latLon.x.toString();
                 inputLat.value = latLon.y.toString();
-                reloadPreview();
+                //reloadPreview();
             }
         });
     }
@@ -314,9 +314,11 @@ function main() {
         renderer.setSize(window.innerWidth, window.innerHeight);
     };
     window.addEventListener('resize', onWindowResize, false);
-    tilePreview.onerror = () => {
-        tilePreview.src = 'assets/nodata.png';
-    };
+    if (tilePreview) {
+        tilePreview.onerror = () => {
+            tilePreview.src = 'assets/nodata.png';
+        };
+    }
     const globeScene = new GlobeScene(renderer);
     globeScene.setActive(true);
     const heightmapScene = new HeightmapScene(renderer);
@@ -341,16 +343,16 @@ function main() {
     inputform.onsubmit = (e) => {
         console.log('on submit');
         e.preventDefault();
-        reloadPreview();
+        //reloadPreview();
         heightmapScene.rebuildWiremesh();
         switchScene(heightmapScene);
         return false;
     };
     legend.style.display = "none";
     viewPanel.style.display = "none";
-    inputLon.onblur = () => { reloadPreview(); };
-    inputLat.onblur = () => { reloadPreview(); };
-    inputZoom.onblur = () => { reloadPreview(); };
+    //inputLon.onblur = () => { reloadPreview(); };
+    //inputLat.onblur = () => { reloadPreview(); };
+    //inputZoom.onblur = () => { reloadPreview(); };
     const animate = () => {
         requestAnimationFrame(animate);
         currentScene.animate();

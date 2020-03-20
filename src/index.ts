@@ -151,7 +151,7 @@ class GlobeScene implements IScene {
                 const latLon = sphereUVtoLatLon(hit.uv!);
                 inputLon.value = latLon.x.toString();
                 inputLat.value = latLon.y.toString();
-                reloadPreview();
+                //reloadPreview();
             }
         })
     
@@ -412,8 +412,10 @@ function main() {
     window.addEventListener( 'resize', onWindowResize, false );
 
 
-    tilePreview.onerror = () => {
-        tilePreview.src = 'assets/nodata.png'
+    if(tilePreview) {
+        tilePreview.onerror = () => {
+            tilePreview.src = 'assets/nodata.png'
+        }
     }
 
     
@@ -446,7 +448,7 @@ function main() {
     inputform.onsubmit = (e: Event) => {
         console.log('on submit')
         e.preventDefault();
-        reloadPreview();
+        //reloadPreview();
         heightmapScene.rebuildWiremesh();
         switchScene(heightmapScene);
         return false;
@@ -454,9 +456,9 @@ function main() {
     legend.style.display = "none";
     viewPanel.style.display = "none";
 
-    inputLon.onblur = () => { reloadPreview(); };
-    inputLat.onblur = () => { reloadPreview(); };
-    inputZoom.onblur = () => { reloadPreview(); };
+    //inputLon.onblur = () => { reloadPreview(); };
+    //inputLat.onblur = () => { reloadPreview(); };
+    //inputZoom.onblur = () => { reloadPreview(); };
 
     const animate = () => {
         requestAnimationFrame( animate );
