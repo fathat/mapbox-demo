@@ -43,29 +43,35 @@
 			<div class="header">
 				<h3>Load Heightfield</h3>
 			</div>
-			<div class="fieldgrid"> 
-				<div class="field">
-					<label for="lat">Lattitude</label>
+			<form id="heightfield-inputs">
+				<div class="fieldgrid"> 
+					<div class="field">
+						<label for="lat">Lattitude</label>
+					</div>
+					<div class="field">
+						<input id="lat" type="text" name="lat" value="39.7392"/>
+					</div>
+					<div class="field">
+						<label for="lon">Longitude</label>
+					</div>
+					<div class="field">
+						<input id="lon" type="text" name="long" value="104.9903"/>
+					</div>
+					<div class="field">
+						<label for="zoom">Zoom</label>
+					</div>
+					<div class="field">
+						<input id="zoom" type="number" name="zoom" value="12"/>
+					</div>
 				</div>
-				<div class="field">
-					<input id="lat" type="number" name="lat" value="39.7392"/>
+				
+				<div>
+					<img id="tilepreview" src="https://api.mapbox.com/v4/mapbox.terrain-rgb/1/0/0.pngraw?access_token=pk.eyJ1IjoiaWFub3ZlcmdhcmQiLCJhIjoiY2s3eXpnc2VsMDB3djNsc2MyeWc0Y3BseSJ9.3BJgWc7kIFflz-t7enxvAQ" />
 				</div>
-				<div class="field">
-					<label for="lon">Longitude</label>
+				<div class="actions">
+					<button id="btn-load-heightmap">Go!</button>
 				</div>
-				<div class="field">
-					<input id="lon" type="number" name="long" value="104.9903"/>
-				</div>
-				<div class="field">
-					<label for="zoom">Zoom</label>
-				</div>
-				<div class="field">
-					<input id="zoom" type="number" name="zoom" value="12"/>
-				</div>
-			</div>
-			<div class="actions">
-				<button id="btn-load-heightmap">Go!</button>
-			</div>
+			</form>
 		</div>
 		<script src="dist/main.js"></script>
 	</body>

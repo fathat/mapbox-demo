@@ -6,6 +6,8 @@ import { Vector2 } from "three";
 //missing .d.ts so use the old school require syntax
 const tilebelt: any = require('@mapbox/tilebelt');
 
+const accessToken = 'pk.eyJ1IjoiaWFub3ZlcmdhcmQiLCJhIjoiY2s3eXpnc2VsMDB3djNsc2MyeWc0Y3BseSJ9.3BJgWc7kIFflz-t7enxvAQ';
+
 /* 
     This is assuming a UVMap from the NASA blue-marble collection
     mapped to a standard UV sphere. 
@@ -20,6 +22,13 @@ function sphereUVtoLatLon(uv: Vector2): Vector2 {
     return new Vector2(lon, lat)
 }
 
+function loadTileFromLatLon(latLon: Vector2, zoom: number, targetImage: HTMLImageElement) {
+    const tile = tilebelt.pointToTile(latLon.x, latLon.y, zoom)
+    const [tx, ty, tz] = tile;    
+    let apiUrl = `https://api.mapbox.com/v4/mapbox.terrain-rgb/${tz}/${tx}/${ty}.pngraw?access_token=${accessToken}`;
+    console.log(apiUrl);
+    targetImage.src = apiUrl;
+}
 
 function main() {
     // scene objects
@@ -30,7 +39,32 @@ function main() {
     const raycaster = new THREE.Raycaster();
     let planetScene: GLTF;
     let mouse = new THREE.Vector2();
+
+    // some relevent dom objects
+    const tilePreview: HTMLImageElement = document.getElementById('tilepreview') as HTMLImageElement;
+    const inputLon: HTMLInputElement = document.getElementById('lon') as HTMLInputElement;
+    const inputLat: HTMLInputElement = document.getElementById('lat') as HTMLInputElement;
+    const inputZoom: HTMLInputElement = document.getElementById('zoom') as HTMLInputElement;
+    const inputform: HTMLFormElement = document.getElementById('heightfield-inputs') as HTMLFormElement;
     
+    inputform.onsubmit = (e: Event) => {
+        console.log('on submit')
+        e.preventDefault();
+        reloadPreview();
+        return false;
+    }
+
+    function reloadPreview() {
+        const lat = parseFloat(inputLat.value)
+        const lon = parseFloat(inputLon.value)
+        const zoom = parseInt(inputZoom.value);
+        loadTileFromLatLon(new Vector2(lon, lat), zoom, tilePreview);
+    }
+        
+    inputLon.onblur = () => { reloadPreview(); };
+    inputLat.onblur = () => { reloadPreview(); };
+    inputZoom.onblur = () => { reloadPreview(); };
+
     const skybox = cubeLoader.load([
       'assets/skybox/right.png',
       'assets/skybox/left.png',
@@ -74,8 +108,7 @@ function main() {
     }, undefined, (errorEvent: ErrorEvent) => {
         console.error(errorEvent);
     });
-
-    
+ 
 
     function onMouseMove( event: MouseEvent ) {
         mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
@@ -95,7 +128,11 @@ function main() {
 
     window.addEventListener( 'resize', onWindowResize, false );
 
-    window.addEventListener( 'dblclick', (ev: MouseEvent) => {
+    tilePreview.onerror = () => {
+        tilePreview.src = 'https://upload.wikimedia.org/wikipedia/it/3/39/Sad_mac.jpg'
+    }
+
+    renderer.domElement.addEventListener( 'dblclick', (ev: MouseEvent) => {
         if(!planetScene) {
             return;
         }
@@ -105,23 +142,13 @@ function main() {
             //just grab the first intersection
             const hit = collisions[0];
             const latLon = sphereUVtoLatLon(hit.uv!);
-
-            (document.getElementById('lon') as any).value = latLon.x;
-            (document.getElementById('lat') as any).value = latLon.y;
-            const zoom = parseInt((document.getElementById('zoom') as any).value);
-            
-            console.log(tilebelt.pointToTile(latLon.x, latLon.y, zoom));
+            inputLon.value = latLon.x.toString();
+            inputLat.value = latLon.y.toString();
+            reloadPreview();
         }
     })
 
     
-    const loadHeightmap = () => {
-        /*url https://api.mapbox.com/v4/mapbox.terrain-rgb/15/0/39.pngraw?access_token=pk.eyJ1IjoiaWFub3ZlcmdhcmQiLCJhIjoiY2s3eXpnc2VsMDB3djNsc2MyeWc0Y3BseSJ9.3BJgWc7kIFflz-t7enxvAQ */
-        alert('done gone load heightmap')
-    }
-
-    document.getElementById('btn-load-heightmap')!.onclick = loadHeightmap;
-
     const animate = () => {
         requestAnimationFrame( animate );
         raycaster.setFromCamera( mouse, camera );  

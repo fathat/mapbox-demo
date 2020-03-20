@@ -3,7 +3,7 @@
     right: 10px;
     top: 10px;
     width: 300px;
-    height: 200px;
+    height: 480px;
     border-radius: 10px;
     border: 1px solid cornflowerblue;
     background-color: rgba(32, 32, 32, 0.8);
@@ -34,6 +34,13 @@ input[type=number] {
 
 input[type=number]::-webkit-inner-spin-button {
     -webkit-appearance: none;
+}
+
+#tilepreview {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    width: 256px;
+    height: 256px;
 }
 
 .field input {
