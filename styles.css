@@ -2,13 +2,13 @@
     position: absolute;
     right: 10px;
     top: 10px;
-    width: 300px;
+    width: 260px;
     height: 480px;
     border-radius: 10px;
     border: 1px solid cornflowerblue;
     background-color: rgba(32, 32, 32, 0.8);
     padding: 15px;
-    color: #00aaff;
+    color: cornflowerblue;
 }
 
 .fieldgrid {
@@ -36,6 +36,19 @@ input[type=number]::-webkit-inner-spin-button {
     -webkit-appearance: none;
 }
 
+#instructions {
+    position: absolute;
+    width: 200px;
+    left: 10px;
+    top: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+    background-color: rgba(32, 32, 32, 0.5);
+    color: cornflowerblue;
+    border-radius: 10px;
+    border: 1px solid cornflowerblue;
+}
+
 #tilepreview {
     margin-top: 20px;
     margin-bottom: 20px;
@@ -47,9 +60,9 @@ input[type=number]::-webkit-inner-spin-button {
     border-radius: 4px;
     padding: 4px;
     border: 1px solid cornflowerblue;
-    width: 100px;
+    width: 142px;
     background-color: rgb(32, 32, 32);
-    color: #00aaff;
+    color: cornflowerblue;
 }
 
 .header {
@@ -80,5 +93,21 @@ input[type=number]::-webkit-inner-spin-button {
     border-radius: 8px;
     border: 1px solid cornflowerblue;
     background-color: rgb(39, 44, 73);
-    color: #00aaff;
+    color: cornflowerblue;
+}
+
+.actions button:hover {
+    background-color: rgb(62, 78, 165);
+    color: white;
+}
+
+.actions button:focus {
+    border: 1px solid rgb(32, 128, 200);
+    background-color: rgb(62, 78, 165);
+    color: cornflowerblue;
+}
+
+.actions button:active {
+    background-color: rgb(32, 32, 64);
+    transform: translateY(2px);
 }
