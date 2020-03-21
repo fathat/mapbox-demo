@@ -65,7 +65,7 @@ export class HeightmapScene implements IScene {
         this.scene.add(this.directionalLight);
         
         // setup compass scene
-        const compassAmbientLight = new THREE.AmbientLight(0xffffff, 1.0);
+        const compassAmbientLight = new THREE.AmbientLight(0xffffff, 2.0);
         this.compassScene.add(compassAmbientLight);
         const compassLight = new THREE.DirectionalLight(0xffffff, 1.0);
         compassLight.position.set(0, 10, 0);
