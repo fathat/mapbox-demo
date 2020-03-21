@@ -43,6 +43,11 @@
     color: cornflowerblue;
 }
 
+#legend img {
+    width: 48px;
+    height: 256px;
+}
+
 .options {
     position: absolute;
     right: 10px;
