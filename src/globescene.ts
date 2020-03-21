@@ -90,6 +90,12 @@ export class GlobeScene implements IScene {
         let drag = false;
         let dragStart = { x: 0, y: 0 };
         
+        renderer.domElement.addEventListener('touchstart', (ev: TouchEvent) => {
+            drag = false;
+            dragStart.x = ev.touches[0].clientX;
+            dragStart.y = ev.touches[0].clientY;
+        });
+
         renderer.domElement.addEventListener('mousedown', (ev: MouseEvent) => {
             drag = false;
             dragStart.x = ev.clientX;
@@ -102,7 +108,15 @@ export class GlobeScene implements IScene {
             }
         });
 
-        renderer.domElement.addEventListener('mouseup', (ev: MouseEvent) => {
+        renderer.domElement.addEventListener('touchmove', (ev: TouchEvent) => {
+            if (Math.abs(ev.touches[0].clientX - dragStart.x) > 5
+                || Math.abs(ev.touches[0].clientY - dragStart.y) > 5) {
+                drag = true;
+            }
+        });
+
+
+        const onClick = () => {
             if (drag) {
                 return;
             }
@@ -118,7 +132,21 @@ export class GlobeScene implements IScene {
                 ui.inputLat.value = latLon.y.toString();
                 this.updateTileVisualization();
             }
+        }
+
+        renderer.domElement.addEventListener('mouseup', (ev: MouseEvent) => {
+            onClick();
         });
+
+        renderer.domElement.addEventListener('touchend', (ev: TouchEvent) => {
+            if(!ev.changedTouches.length) {
+                return;
+            }
+            const x = ( ev.changedTouches[0].clientX / window.innerWidth ) * 2 - 1;
+            const y = - ( ev.changedTouches[0].clientY / window.innerHeight ) * 2 + 1;
+            raycaster.setFromCamera({x, y}, this.camera)
+            onClick();
+        })
     }
 
     updateTileVisualization() {
