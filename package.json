@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@mapbox/tilebelt": "^1.0.1",
+    "draco3d": "^1.3.6",
     "mapbox": "^1.0.0-beta10",
     "three": "^0.114.0"
   },
