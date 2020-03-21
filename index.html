@@ -15,19 +15,29 @@
 
 		<script id="halo-fs" type="x-shader/x-fragment">
 			varying vec3 vNormal;
+			varying vec2 vUV;
 
+			uniform vec4 uvHighlightRange;
+						
 			void main(void) {
 				float intensity = 1.0 - abs(dot(vNormal.xyz, vec3(0, 0, -1)));
 				float colorIntensity = clamp(pow(intensity * 2.0, 1.1), 0.0, 1.0);
-				gl_FragColor = vec4(vec3(0.7, 0.8, 1.0) * colorIntensity, intensity);
+				
+				if(vUV.x >= uvHighlightRange.x && vUV.x < uvHighlightRange.z && vUV.y >= uvHighlightRange.y && vUV.y < uvHighlightRange.w) {
+					gl_FragColor = vec4(vec3(0.2, 0.65, 1.0), 0.4);
+				} else {
+					gl_FragColor = vec4(vec3(0.7, 0.8, 1.0) * colorIntensity, intensity);
+				}
 			}
 		</script>
 
 		<script id="halo-vs" type="x-shader/x-vertex">
 			varying vec3 vNormal;
+			varying vec2 vUV;
 
 			void main()
 			{
+				vUV = uv.xy;
 				vNormal.xyz = normalMatrix * normal;
 				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 				gl_Position = projectionMatrix * mvPosition;
@@ -63,7 +73,7 @@
 	</head>
 	<body>
 		<div id="instructions">
-			<p> Hint: You can double click on the globe to set a lattitude and longitude. </p>	
+			<p> Hint: You click on the globe to set a lattitude and longitude. </p>	
 		</div>
 		<div id="view">
 			<button id="view-globe-btn">Back to Globe</button>
@@ -96,7 +106,7 @@
 						<label for="zoom">Zoom</label>
 					</div>
 					<div class="field">
-						<input id="zoom" type="range" min="0" max="15" name="zoom" value="12"/>
+						<input id="zoom" type="range" min="0" max="15" name="zoom" value="5"/>
 					</div>
 				</div>
 				

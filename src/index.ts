@@ -30,19 +30,19 @@ const viewPanel: HTMLDivElement = document.getElementById('view') as HTMLDivElem
 const instructionsPanel: HTMLDivElement = document.getElementById('instructions') as HTMLDivElement;
 
 interface ILocation {
-    lat: number
     lon: number
+    lat: number
     zoom: number
 }
 
 class Location implements ILocation {
-    constructor(public lat: number, public lon: number, public zoom: number) {}
+    constructor(public lon: number, public lat: number, public zoom: number) {}
 }
 
 function currentLocation() {
     return new Location(
-        parseFloat(inputLat.value),
         parseFloat(inputLon.value),
+        parseFloat(inputLat.value),
         parseInt(inputZoom.value)
     );
 }
@@ -59,6 +59,17 @@ function sphereUVtoLatLon(uv: Vector2): Vector2 {
     const lat: number = (uv.y - 0.5) * -180;
     const lon: number = (uv.x - 0.5) * 360;
     return new Vector2(lon, lat)
+}
+
+function locationToUVbox(location: ILocation) {
+    const tile = TileBelt.pointToTile(location.lon, location.lat, location.zoom);
+    const bbox = TileBelt.tileToBBOX(tile);
+    let [w, s, e, n] = bbox;
+    w += 180;
+    e += 180;
+    s += 90;
+    n += 90;
+    return [w/360.0, s/180.0, e/360.0, n/180.0];
 }
 
 function loadTileFromLatLonIntoImage(location: ILocation, targetImage: HTMLImageElement) {
@@ -87,6 +98,7 @@ class GlobeScene implements IScene {
     controls: OrbitControls;
     directionalLight: THREE.DirectionalLight;
     ambientLight: THREE.AmbientLight;
+    shaderMaterial: THREE.ShaderMaterial;
 
     constructor(renderer: THREE.WebGLRenderer) {
         // scene objects
@@ -97,7 +109,6 @@ class GlobeScene implements IScene {
         gltfLoader.load('assets/earth.glb', (gltf: GLTF) => {
             this.scene.add(gltf.scene);
             this.planetScene = gltf;
-            console.log(this.scene);
         }, undefined, (errorEvent: ErrorEvent) => {
             console.error(errorEvent);
         });
@@ -119,12 +130,20 @@ class GlobeScene implements IScene {
 
         // add a sphere for the atmosphere halo
         let geometry = new THREE.SphereGeometry(0.975, 60, 30);
-        let material = new THREE.ShaderMaterial({
+        this.shaderMaterial = new THREE.ShaderMaterial({
             vertexShader: document.getElementById('halo-vs')!.textContent!,
             fragmentShader: document.getElementById('halo-fs')!.textContent!,
+            uniforms: {
+                uvHighlightRange: {
+                    value: [0.0, 0.0, 0.0, 0.0]
+                },
+                subdivisions: {
+                    value: 1
+                }
+            },
             transparent: true
         })
-        let sphere = new THREE.Mesh(geometry, material);
+        let sphere = new THREE.Mesh(geometry, this.shaderMaterial);
         this.scene.add(sphere);
 
         this.controls = new OrbitControls( this.camera, renderer.domElement );
@@ -140,6 +159,40 @@ class GlobeScene implements IScene {
         }
         window.addEventListener( 'resize', onWindowResize, false );
 
+        inputZoom.addEventListener('change', () => {this.updateTileVisualization(); })
+
+        let drag = false;
+        let mouseStart = {x: 0, y:0};
+
+        renderer.domElement.addEventListener( 'mousedown', (ev: MouseEvent) => {
+            drag = false;
+            mouseStart.x = ev.clientX;
+            mouseStart.y = ev.clientY;
+        });
+        renderer.domElement.addEventListener( 'mousemove', (ev: MouseEvent) => {
+
+            if(Math.abs(ev.clientX - mouseStart.x) > 5
+            || Math.abs(ev.clientY - mouseStart.y) > 5) {
+                drag = true;
+            }
+        });
+
+        renderer.domElement.addEventListener( 'mouseup', (ev: MouseEvent) => {
+            if(drag) { return; }
+            if(!this.planetScene || !this.active) {
+                return;
+            }
+            var collisions = raycaster.intersectObjects( this.planetScene.scene.children, true);
+            if(collisions.length > 0) {
+                //just grab the first intersection
+                const hit = collisions[0];
+                const latLon = sphereUVtoLatLon(hit.uv!);
+                inputLon.value = latLon.x.toString();
+                inputLat.value = latLon.y.toString();
+                this.updateTileVisualization();
+            }
+        })
+
         renderer.domElement.addEventListener( 'dblclick', (ev: MouseEvent) => {
             if(!this.planetScene || !this.active) {
                 return;
@@ -151,12 +204,22 @@ class GlobeScene implements IScene {
                 const latLon = sphereUVtoLatLon(hit.uv!);
                 inputLon.value = latLon.x.toString();
                 inputLat.value = latLon.y.toString();
-                //reloadPreview();
+                this.updateTileVisualization();
             }
         })
     
     }
     
+    updateTileVisualization() {
+        const loc = currentLocation();
+        const box = locationToUVbox(loc);
+        
+        this.shaderMaterial.uniforms.uvHighlightRange = {
+            value: box
+        };      
+        this.shaderMaterial.uniformsNeedUpdate = true;
+    }
+
     setActive(active: boolean) {
         this.active = active;
         this.controls.enabled = active;
@@ -277,7 +340,6 @@ class HeightmapScene implements IScene {
             textureLoader.load(canvas.toDataURL(),
                 (texture: THREE.Texture) => {
                     const imgData = context!.getImageData(0, 0, w, h);
-                    console.log(imgData);
                     this.planeGeometry = new THREE.PlaneGeometry(w, h, w-1, h-1);
                     let index = 0;
 
@@ -446,7 +508,6 @@ function main() {
     }
 
     inputform.onsubmit = (e: Event) => {
-        console.log('on submit')
         e.preventDefault();
         //reloadPreview();
         heightmapScene.rebuildWiremesh();

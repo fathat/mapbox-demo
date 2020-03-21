@@ -32,14 +32,14 @@ const legend = document.getElementById('legend');
 const viewPanel = document.getElementById('view');
 const instructionsPanel = document.getElementById('instructions');
 class Location {
-    constructor(lat, lon, zoom) {
-        this.lat = lat;
+    constructor(lon, lat, zoom) {
         this.lon = lon;
+        this.lat = lat;
         this.zoom = zoom;
     }
 }
 function currentLocation() {
-    return new Location(parseFloat(inputLat.value), parseFloat(inputLon.value), parseInt(inputZoom.value));
+    return new Location(parseFloat(inputLon.value), parseFloat(inputLat.value), parseInt(inputZoom.value));
 }
 /*
     This is assuming a UVMap from the NASA blue-marble collection
@@ -53,6 +53,16 @@ function sphereUVtoLatLon(uv) {
     const lat = (uv.y - 0.5) * -180;
     const lon = (uv.x - 0.5) * 360;
     return new three_1.Vector2(lon, lat);
+}
+function locationToUVbox(location) {
+    const tile = TileBelt.pointToTile(location.lon, location.lat, location.zoom);
+    const bbox = TileBelt.tileToBBOX(tile);
+    let [w, s, e, n] = bbox;
+    w += 180;
+    e += 180;
+    s += 90;
+    n += 90;
+    return [w / 360.0, s / 180.0, e / 360.0, n / 180.0];
 }
 function loadTileFromLatLonIntoImage(location, targetImage) {
     const tile = TileBelt.pointToTile(location.lon, location.lat, location.zoom);
@@ -73,7 +83,6 @@ class GlobeScene {
         gltfLoader.load('assets/earth.glb', (gltf) => {
             this.scene.add(gltf.scene);
             this.planetScene = gltf;
-            console.log(this.scene);
         }, undefined, (errorEvent) => {
             console.error(errorEvent);
         });
@@ -92,12 +101,20 @@ class GlobeScene {
         this.scene.add(this.directionalLight);
         // add a sphere for the atmosphere halo
         let geometry = new THREE.SphereGeometry(0.975, 60, 30);
-        let material = new THREE.ShaderMaterial({
+        this.shaderMaterial = new THREE.ShaderMaterial({
             vertexShader: document.getElementById('halo-vs').textContent,
             fragmentShader: document.getElementById('halo-fs').textContent,
+            uniforms: {
+                uvHighlightRange: {
+                    value: [0.0, 0.0, 0.0, 0.0]
+                },
+                subdivisions: {
+                    value: 1
+                }
+            },
             transparent: true
         });
-        let sphere = new THREE.Mesh(geometry, material);
+        let sphere = new THREE.Mesh(geometry, this.shaderMaterial);
         this.scene.add(sphere);
         this.controls = new OrbitControls_js_1.OrbitControls(this.camera, renderer.domElement);
         this.controls.enabled = false;
@@ -109,6 +126,37 @@ class GlobeScene {
             this.camera.updateProjectionMatrix();
         };
         window.addEventListener('resize', onWindowResize, false);
+        inputZoom.addEventListener('change', () => { this.updateTileVisualization(); });
+        let drag = false;
+        let mouseStart = { x: 0, y: 0 };
+        renderer.domElement.addEventListener('mousedown', (ev) => {
+            drag = false;
+            mouseStart.x = ev.clientX;
+            mouseStart.y = ev.clientY;
+        });
+        renderer.domElement.addEventListener('mousemove', (ev) => {
+            if (Math.abs(ev.clientX - mouseStart.x) > 5
+                || Math.abs(ev.clientY - mouseStart.y) > 5) {
+                drag = true;
+            }
+        });
+        renderer.domElement.addEventListener('mouseup', (ev) => {
+            if (drag) {
+                return;
+            }
+            if (!this.planetScene || !this.active) {
+                return;
+            }
+            var collisions = raycaster.intersectObjects(this.planetScene.scene.children, true);
+            if (collisions.length > 0) {
+                //just grab the first intersection
+                const hit = collisions[0];
+                const latLon = sphereUVtoLatLon(hit.uv);
+                inputLon.value = latLon.x.toString();
+                inputLat.value = latLon.y.toString();
+                this.updateTileVisualization();
+            }
+        });
         renderer.domElement.addEventListener('dblclick', (ev) => {
             if (!this.planetScene || !this.active) {
                 return;
@@ -120,9 +168,17 @@ class GlobeScene {
                 const latLon = sphereUVtoLatLon(hit.uv);
                 inputLon.value = latLon.x.toString();
                 inputLat.value = latLon.y.toString();
-                //reloadPreview();
+                this.updateTileVisualization();
             }
         });
+    }
+    updateTileVisualization() {
+        const loc = currentLocation();
+        const box = locationToUVbox(loc);
+        this.shaderMaterial.uniforms.uvHighlightRange = {
+            value: box
+        };
+        this.shaderMaterial.uniformsNeedUpdate = true;
     }
     setActive(active) {
         this.active = active;
@@ -208,7 +264,6 @@ class HeightmapScene {
             context.drawImage(img, 0, 0);
             textureLoader.load(canvas.toDataURL(), (texture) => {
                 const imgData = context.getImageData(0, 0, w, h);
-                console.log(imgData);
                 this.planeGeometry = new THREE.PlaneGeometry(w, h, w - 1, h - 1);
                 let index = 0;
                 let minHeight = Number.MAX_VALUE;
@@ -341,7 +396,6 @@ function main() {
         };
     }
     inputform.onsubmit = (e) => {
-        console.log('on submit');
         e.preventDefault();
         //reloadPreview();
         heightmapScene.rebuildWiremesh();
