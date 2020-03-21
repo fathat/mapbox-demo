@@ -44,7 +44,6 @@
 			}
 		</script>
 
-
 		<script id="map-vs" type="x-shader/x-vertex">
 			varying vec3 vNormal;
 			varying float rampLookup;
@@ -52,12 +51,13 @@
 
 			void main()
 			{
-				rampLookup = position.z / 32.0;
+				rampLookup = position.z / maxHeight;
 				vNormal.xyz = (modelMatrix * vec4(normal, 0)).xyz;
 				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
 				gl_Position = projectionMatrix * mvPosition;
 			}
 		</script>
+
 		<script id="map-fs" type="x-shader/x-fragment">
 			varying vec3 vNormal;
 			varying float rampLookup;
@@ -73,11 +73,10 @@
 	</head>
 	<body>
 		<div id="instructions">
-			<p> Hint: You click on the globe to set a lattitude and longitude. </p>	
+			<p> Hint: You can click on the globe to set a lattitude and longitude. </p>	
 		</div>
 		<div id="view">
 			<button id="view-globe-btn">Back to Globe</button>
-			<!--<button id="view-heightmap-btn">Heightmap</button>-->
 		</div>
 		<div id="legend">
 			<div id="max-height"></div>
@@ -110,9 +109,6 @@
 					</div>
 				</div>
 				
-				<!--<div>
-					<img id="tilepreview" src="assets/nodata.png" />
-				</div>-->
 				<div class="actions">
 					<button id="btn-load-heightmap">Show Heightfield</button>
 				</div>
