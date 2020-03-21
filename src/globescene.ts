@@ -37,12 +37,12 @@ export class GlobeScene implements IScene {
         });
 
         const skybox = cubeLoader.load([
-            'assets/skybox/right.png',
-            'assets/skybox/left.png',
-            'assets/skybox/top.png',
-            'assets/skybox/bottom.png',
-            'assets/skybox/front.png',
-            'assets/skybox/back.png',
+            'assets/skybox/right.jpg',
+            'assets/skybox/left.jpg',
+            'assets/skybox/top.jpg',
+            'assets/skybox/bottom.jpg',
+            'assets/skybox/front.jpg',
+            'assets/skybox/back.jpg',
         ]);
         this.scene.background = skybox;
         

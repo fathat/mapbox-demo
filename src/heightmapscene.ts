@@ -49,12 +49,12 @@ export class HeightmapScene implements IScene {
         this.compassCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 100);
         
         const skybox = cubeLoader.load([
-            'assets/ground-skybox/right.png',
-            'assets/ground-skybox/left.png',
-            'assets/ground-skybox/top.png',
-            'assets/ground-skybox/bottom.png',
-            'assets/ground-skybox/front.png',
-            'assets/ground-skybox/back.png',
+            'assets/ground-skybox/right.jpg',
+            'assets/ground-skybox/left.jpg',
+            'assets/ground-skybox/top.jpg',
+            'assets/ground-skybox/bottom.jpg',
+            'assets/ground-skybox/front.jpg',
+            'assets/ground-skybox/back.jpg',
         ]);
         this.scene.background = skybox;
         
