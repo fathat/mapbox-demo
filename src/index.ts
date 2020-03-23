@@ -40,7 +40,7 @@ function main() {
     // hook up the "view heightfield" button
     ui.inputform.onsubmit = (e: Event) => {
         e.preventDefault();
-        sceneManager.heightmapScene.rebuildMesh();
+        sceneManager.heightmapScene.rebuildMesh(renderer);
         sceneManager.switchScene(sceneManager.heightmapScene);
         return false;
     }

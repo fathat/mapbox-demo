@@ -32,6 +32,17 @@
     transform: translateY(2px);
 }
 
+#point-info {
+    position: absolute;
+    left: 45%;
+    top: 10px;
+    border-radius: 10px;
+    border: 1px solid cornflowerblue;
+    background-color: rgba(32, 32, 32, 0.8);
+    padding: 15px;
+    color: cornflowerblue;
+}
+
 #legend {
     position: absolute;
     top: 120px;

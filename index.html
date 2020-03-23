@@ -46,11 +46,16 @@
 
 		<script id="map-vs" type="x-shader/x-vertex">
 			varying vec3 vNormal;
+			varying vec2 vHighlightUV;
+			varying vec2 vUV;
 			varying float rampLookup;
 			uniform float maxHeight;
+			uniform vec2 highlightUV;
 
 			void main()
 			{
+				vUV = uv.xy;
+				vHighlightUV = highlightUV;
 				rampLookup = position.z / maxHeight;
 				vNormal.xyz = (modelMatrix * vec4(normal, 0)).xyz;
 				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
@@ -59,21 +64,33 @@
 		</script>
 
 		<script id="map-fs" type="x-shader/x-fragment">
+			varying vec2 vUV;
 			varying vec3 vNormal;
 			varying float rampLookup;
 			uniform sampler2D rampTexture;
 
+			varying vec2 vHighlightUV;
+
 			void main(void) {
 				float l = abs(dot(vNormal.xyz, vec3(0, 1, 0)));
-				vec4 color = texture2D(rampTexture, vec2(0.0, rampLookup));
-				gl_FragColor = vec4(color.rgb * l, 1.0);
+				float highlightDistance = distance(vHighlightUV, vUV.xy);
+
+				float highlight = 0.0;
+				if(highlightDistance < 0.01) {
+					highlight = (cos(highlightDistance / 0.001) + 1.0) * 0.5;
+				}
+
+				vec3 color = texture2D(rampTexture, vec2(0.0, rampLookup)).rgb * l;
+				color.rgb = mix(color.rgb, vec3(1.0, 1.0, 1.0), highlight);
+				gl_FragColor = vec4(color.rgb, 1.0);
 			}
 		</script>
 
 	</head>
 	<body>
+		<div id="point-info">Double Click to Sample Height</div>
 		<div id="instructions">
-			<p> Hint: You can click on the globe to set a lattitude and longitude. </p>	
+			<p> Click on the globe to set a lattitude and longitude. </p>	
 		</div>
 		<div id="view">
 			<button id="view-globe-btn">Back to Globe</button>

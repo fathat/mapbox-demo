@@ -1,12 +1,14 @@
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import * as THREE from 'three';
-import { Vector3 } from "three";
+import { Vector3, WebGLBufferRenderer, Vector2 } from "three";
 
 import { currentLocation, loadTileFromLatLonIntoImage } from "./location";
 import { IScene } from "./scene";
 import { cubeLoader, gltfLoader, textureLoader, raycaster, mouse } from "./globals";
 import * as ui from "./uielements";
+
+const heightmapScale = 32.0;
 
 export class HeightmapScene implements IScene {
     // is this scene active?
@@ -24,7 +26,7 @@ export class HeightmapScene implements IScene {
 
     // Terrain geometry
     terrain?: THREE.Mesh;
-    terrainMaterial?: THREE.Material;
+    terrainMaterial?: THREE.ShaderMaterial;
     terrainGeometry?: THREE.PlaneGeometry;
     
     // The compass object gets its own scene (renders separately from the 
@@ -40,8 +42,11 @@ export class HeightmapScene implements IScene {
     w: number = 0;
     h: number = 0;
 
+    renderer: THREE.WebGLRenderer;
+
     constructor(renderer: THREE.WebGLRenderer) {
 
+        this.renderer = renderer;
         // scene objects
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.05, 1000);
@@ -80,7 +85,7 @@ export class HeightmapScene implements IScene {
         });
 
         // plane       
-        this.rebuildMesh();
+        this.rebuildMesh(renderer);
 
         this.controls = new OrbitControls(this.camera, renderer.domElement);
         this.controls.enabled = false;
@@ -104,10 +109,23 @@ export class HeightmapScene implements IScene {
         window.addEventListener('resize', onWindowResize, false);
     }
 
-    public rebuildMesh() {
+    onDblClick(ev: MouseEvent) {
+        var collisions = raycaster.intersectObjects(this.scene.children, true);
+        if (collisions.length > 0 && this.terrainMaterial) {
+            //just grab the first intersection
+            const hit = collisions[0];
+            ui.setPointInfo((hit.point.y/this.scaledHeightRange()) * (this.heightRange()) + this.minHeight);
+            this.terrainMaterial.uniforms!.highlightUV = {
+                value: hit.uv
+            }
+            this.terrainMaterial.uniformsNeedUpdate = true;
+        }
+    }
+
+    public rebuildMesh(renderer: THREE.WebGLRenderer) {
         if (this.terrain) {
             this.scene.remove(this.terrain);
-        }
+        }     
 
         let img = new Image();
         
@@ -137,7 +155,7 @@ export class HeightmapScene implements IScene {
                 ui.setMinMaxHeightDisplay(this.minHeight, this.maxHeight);
                 
                 // Load height data into the terrain geometry. Renormalize all the heights
-                // so max height is always 32. 
+                // so max height is always "heightScale". 
                 this.rebuildGeometry();
 
                 // Setup the terrain material to use a color ramp with a shader material
@@ -152,6 +170,9 @@ export class HeightmapScene implements IScene {
                             },
                             maxHeight: {
                                 value: this.scaledHeightRange()
+                            },
+                            highlightUV: {
+                                value: new Vector2(0.5, 0.5)
                             }
                         },
                         side: THREE.DoubleSide,
@@ -160,6 +181,8 @@ export class HeightmapScene implements IScene {
                     this.terrain = new THREE.Mesh(this.terrainGeometry, this.terrainMaterial);
                     this.terrain.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
                     this.scene.add(this.terrain);
+                    renderer.domElement.addEventListener('dblclick', this.onDblClick.bind(this));
+                    ui.clearPointInfo();
                 });
             });
         };
@@ -172,11 +195,7 @@ export class HeightmapScene implements IScene {
     }
 
     private scaledHeightRange(): number {
-        const loc = currentLocation();
-        if(loc.zoom <= 3) {
-            return 10.0;
-        }
-        return Math.max(this.heightRange() / 50.0, 20.0);
+        return heightmapScale;
     }
     
     private rebuildGeometry() {
