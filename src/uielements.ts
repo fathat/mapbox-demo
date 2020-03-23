@@ -10,10 +10,15 @@ const legend: HTMLDivElement = document.getElementById('legend') as HTMLDivEleme
 const viewPanel: HTMLDivElement = document.getElementById('view') as HTMLDivElement;
 const instructionsPanel: HTMLDivElement = document.getElementById('instructions') as HTMLDivElement;
 const pointInfo: HTMLDivElement = document.getElementById('point-info') as HTMLDivElement;
+const loading: HTMLDivElement = document.getElementById('loading') as HTMLDivElement;
 
 export enum UIMode {
     Globe,
     Heightmap
+}
+
+export function doneLoading() {
+    loading.style.display = "none";
 }
 
 export function setMode(mode: UIMode) {

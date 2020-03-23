@@ -32,6 +32,7 @@ export class GlobeScene implements IScene {
         gltfLoader.load('assets/earth.glb', (gltf: GLTF) => {
             this.scene.add(gltf.scene);
             this.planetModel = gltf;
+            ui.doneLoading();
         }, undefined, (errorEvent: ErrorEvent) => {
             console.error(errorEvent);
         });

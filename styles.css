@@ -32,6 +32,27 @@
     transform: translateY(2px);
 }
 
+#loading {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: black;
+    color: cornflowerblue;
+    font-size: 100pt;
+    z-index: 100;
+}
+
+#loading-text {
+    position: absolute;
+    left: 40%;
+    right: 40%;
+    top: 45%;
+    bottom: 45%;
+    text-align: center;
+}
+
 #point-info {
     position: absolute;
     left: 45%;
