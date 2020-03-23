@@ -23,7 +23,10 @@
 				float intensity = 1.0 - abs(dot(vNormal.xyz, vec3(0, 0, -1)));
 				float colorIntensity = clamp(pow(intensity * 2.0, 1.1), 0.0, 1.0);
 				
-				if(vUV.x >= uvHighlightRange.x && vUV.x < uvHighlightRange.z && vUV.y >= uvHighlightRange.y && vUV.y < uvHighlightRange.w) {
+				if(vUV.x >= uvHighlightRange.x 
+				&& vUV.x < uvHighlightRange.z 
+				&& vUV.y >= uvHighlightRange.y 
+				&& vUV.y < uvHighlightRange.w) {
 					gl_FragColor = vec4(vec3(0.2, 0.65, 1.0), 0.4);
 				} else {
 					gl_FragColor = vec4(vec3(0.7, 0.8, 1.0) * colorIntensity, intensity);
