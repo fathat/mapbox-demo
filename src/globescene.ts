@@ -7,6 +7,9 @@ import { IScene } from "./scene";
 import { gltfLoader, cubeLoader, raycaster, mouse } from "./globals";
 import * as ui from "./uielements";
 
+// This scene allows you to rotate around a globe and pick tiles
+// based on a zoom level. This is the default scene when the application
+// is loaded.
 export class GlobeScene implements IScene {
 
     active: boolean = false;
@@ -88,6 +91,10 @@ export class GlobeScene implements IScene {
 
         ui.inputZoom.addEventListener('change', () => { this.updateTileVisualization(); });
 
+
+        // Keep track of if the mouse is dragged after clicking. This is so 
+        // we can differentiate between the user clicking on the globe, versus
+        // dragging to do a rotation where a click isn't intended.
         let drag = false;
         let dragStart = { x: 0, y: 0 };
         
@@ -102,6 +109,7 @@ export class GlobeScene implements IScene {
             dragStart.x = ev.clientX;
             dragStart.y = ev.clientY;
         });
+        
         renderer.domElement.addEventListener('mousemove', (ev: MouseEvent) => {
             if (Math.abs(ev.clientX - dragStart.x) > 5
                 || Math.abs(ev.clientY - dragStart.y) > 5) {

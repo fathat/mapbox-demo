@@ -2,10 +2,10 @@ import * as ui from "./uielements";
 import { Vector2 } from "three";
 import { accessToken } from "./token";
 
-//missing a .d.ts for this module so use the old school require syntax
+// missing a .d.ts for this module so use the old school require syntax
 const TileBelt: any = require('@mapbox/tilebelt');
 
-
+// represents a point on the globe, with an integer zoom level (between 0-15)
 export interface ILocation {
     lon: number
     lat: number

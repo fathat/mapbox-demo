@@ -1,15 +1,19 @@
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import * as THREE from 'three';
-import { Vector3, WebGLBufferRenderer, Vector2 } from "three";
+import { Vector3, Vector2 } from "three";
 
 import { currentLocation, loadTileFromLatLonIntoImage } from "./location";
 import { IScene } from "./scene";
 import { cubeLoader, gltfLoader, textureLoader, raycaster, mouse } from "./globals";
 import * as ui from "./uielements";
 
+// renormalize the scale of each heightmap to be
+// between 0-32. 
 const heightmapScale = 32.0;
 
+// This is the scene that displays raw heightmap data
+// from the tile we picked based on lat/lon/zoom. 
 export class HeightmapScene implements IScene {
     // is this scene active?
     // (note: hypothetically possible to have multiple active scenes,
@@ -38,10 +42,18 @@ export class HeightmapScene implements IScene {
     // cache the minimum and maximum heights
     minHeight: number = Number.MAX_VALUE;
     maxHeight: number = Number.MIN_VALUE;
+    
+    // 1d array representing 2d data, reference
+    // via x+y*w
     heights: number[] = [];
+    
+    // width/height (in terms of number of segments)
     w: number = 0;
     h: number = 0;
 
+    // cache the renderer because we need to 
+    // attach some events to the dom object on
+    // mesh rebuild. 
     renderer: THREE.WebGLRenderer;
 
     constructor(renderer: THREE.WebGLRenderer) {
@@ -84,11 +96,11 @@ export class HeightmapScene implements IScene {
             console.error(errorEvent);
         });
 
-        // plane       
+        // create the terrain
         this.rebuildMesh(renderer);
 
         this.controls = new OrbitControls(this.camera, renderer.domElement);
-        this.controls.enabled = false;
+        this.controls.enabled = false; // disabled by default (until scene is active)
 
         this.camera.position.set(0, 128, 128);
         
@@ -109,6 +121,7 @@ export class HeightmapScene implements IScene {
         window.addEventListener('resize', onWindowResize, false);
     }
 
+    // when the terrain is double clicked, display the height info for the point.
     onDblClick(ev: MouseEvent) {
         var collisions = raycaster.intersectObjects(this.scene.children, true);
         if (collisions.length > 0 && this.terrainMaterial) {
@@ -148,14 +161,16 @@ export class HeightmapScene implements IScene {
             context!.drawImage(img, 0, 0);
             textureLoader.load(canvas.toDataURL(), (texture: THREE.Texture) => {
                 
+                // note: w-1 and h-1 because we're setting heights on vertices, not tiles. 
                 this.terrainGeometry = new THREE.PlaneGeometry(w, h, w - 1, h - 1);
+
                 const imgData = context!.getImageData(0, 0, w, h);               
                 this.readHeightsFromImageData(imgData); 
                 
+                // update the legend on the side to show the minimum and maximum heights
                 ui.setMinMaxHeightDisplay(this.minHeight, this.maxHeight);
                 
-                // Load height data into the terrain geometry. Renormalize all the heights
-                // so max height is always "heightScale". 
+                // Load height data into the terrain geometry. 
                 this.rebuildGeometry();
 
                 // Setup the terrain material to use a color ramp with a shader material
@@ -179,6 +194,8 @@ export class HeightmapScene implements IScene {
                         vertexColors: true
                     });
                     this.terrain = new THREE.Mesh(this.terrainGeometry, this.terrainMaterial);
+
+                    // by default the plane is defined on xy, so rotate it so that it's on xz instead. 
                     this.terrain.setRotationFromEuler(new THREE.Euler(-90 * (3.14159 / 180.0), 0, 0));
                     this.scene.add(this.terrain);
                     renderer.domElement.addEventListener('dblclick', this.onDblClick.bind(this));

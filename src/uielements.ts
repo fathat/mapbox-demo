@@ -1,4 +1,4 @@
-// some relevent dom objects
+// some relevant dom objects
 export const inputLon: HTMLInputElement = document.getElementById('lon') as HTMLInputElement;
 export const inputLat: HTMLInputElement = document.getElementById('lat') as HTMLInputElement;
 export const inputZoom: HTMLInputElement = document.getElementById('zoom') as HTMLInputElement;

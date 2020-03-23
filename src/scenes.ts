@@ -2,6 +2,7 @@ import { IScene } from "./scene";
 import { HeightmapScene } from "./heightmapscene";
 import { GlobeScene } from "./globescene";
 
+// This class manages switching between scenes (all two of them!)
 export class SceneManager {
 
     public globeScene: GlobeScene;

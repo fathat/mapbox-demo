@@ -16,7 +16,8 @@ function main() {
     renderer.setClearColor('#001122');
     document.body.appendChild( renderer.domElement );
     
-    // Track mouse coordinates
+    // Track mouse coordinates, as normalized device coordinates
+    // (for ray-casting)
     function onMouseMove( event: MouseEvent ) {
         mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
         mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
